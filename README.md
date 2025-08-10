@@ -11,3 +11,4 @@ Features:
 - Fix Snow Weather: Credits to daniilS
 - Better Reflection Sysytem: Credits to ghoulslash
 - Force Load Offscreen object events with a flag: Credits to Lunos
+- Restoring the Shred Split Battle Transition: Credits to Lunos and GriffinR
