@@ -7,3 +7,4 @@ Credits for pret/pokeemerald -
 Features:
 - Make space for EWRAM Data for Summary screen: Credits to ShinyDragonHunter
 - Not showing dex entries until getting the Pokedex: Credits to Jaizu
+- Surfing Dismount Ground Effects: Credits to ghoulslash
