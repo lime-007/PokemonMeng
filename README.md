@@ -9,3 +9,5 @@ Features:
 - Not showing dex entries until getting the Pokedex: Credits to Jaizu
 - Surfing Dismount Ground Effects: Credits to ghoulslash
 - Fix Snow Weather: Credits to daniilS
+- Better Reflection Sysytem: Credits to ghoulslash
+- Force Load Offscreen object events with a flag: Credits to Lunos
