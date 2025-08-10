@@ -5,4 +5,5 @@ This is a decompilation of Pokémon Emerald. Using pret/pokeemerald(https://gith
 Credits for pret/pokeemerald - 
 
 Features:
-Make space for EWRAM Data for Summary screen - Credits ShinyDragonHunter
+- Make space for EWRAM Data for Summary screen: Credits to ShinyDragonHunter
+- Not showing dex entries until getting the Pokedex: Credits to Jaizu
