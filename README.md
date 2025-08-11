@@ -12,3 +12,5 @@ Features:
 - Better Reflection Sysytem: Credits to ghoulslash
 - Force Load Offscreen object events with a flag: Credits to Lunos
 - Restoring the Shred Split Battle Transition: Credits to Lunos and GriffinR
+- Improving the WaitForVBlank function: Credits to DizzyEggg
+- Optimization, Remove expensive and redundant 'BuildColorMaps()' function: Credits to Deokishisu
