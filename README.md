@@ -15,3 +15,4 @@ Features:
 - Improving the WaitForVBlank function: Credits to DizzyEggg
 - Optimization, Remove expensive and redundant 'BuildColorMaps()' function: Credits to Deokishisu
 - Don't reset pushable boulders when moving around the map: Credits to wiz1989
+- Fix Ai's Switch In Battle: Credits to devolov

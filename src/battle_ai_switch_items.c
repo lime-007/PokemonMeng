@@ -629,22 +629,19 @@ static void ModulateByTypeEffectiveness(u8 atkType, u8 defType1, u8 defType2, u8
 u8 GetMostSuitableMonToSwitchInto(void)
 {
     u8 opposingBattler;
-#ifdef BUGFIX
-    s32 bestDmg;
-#else
-    u8 bestDmg; // Note: should be changed to s32 since it is also used for the actual damage done later
-#endif
+    s32 bestDmg;                  // lower = better typing (takes less damage)
     u8 bestMonId;
     u8 battlerIn1, battlerIn2;
-    s32 firstId;
-    s32 lastId; // + 1
+    s32 firstId, lastId;          // lastId is exclusive
     struct Pokemon *party;
     s32 i, j;
     u8 invalidMons;
     u16 move;
+    bool8 checkedAllMonForSEMoves = FALSE;  // second pass if no one has SE move
 
     if (*(gBattleStruct->monToSwitchIntoId + gActiveBattler) != PARTY_SIZE)
         return *(gBattleStruct->monToSwitchIntoId + gActiveBattler);
+
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
         return gBattlerPartyIndexes[gActiveBattler] + 1;
 
@@ -656,7 +653,6 @@ u8 GetMostSuitableMonToSwitchInto(void)
         else
             battlerIn2 = GetBattlerAtPosition(BATTLE_PARTNER(GetBattlerPosition(gActiveBattler)));
 
-        // UB: It considers the opponent only player's side even though it can battle alongside player.
         opposingBattler = Random() & BIT_FLANK;
         if (gAbsentBattlerFlags & gBitTable[opposingBattler])
             opposingBattler ^= BIT_FLANK;
@@ -677,21 +673,19 @@ u8 GetMostSuitableMonToSwitchInto(void)
     }
     else
     {
-        firstId = 0, lastId = PARTY_SIZE;
+        firstId = 0; lastId = PARTY_SIZE;
     }
 
-    if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER)
-        party = gPlayerParty;
-    else
-        party = gEnemyParty;
-
+    party = (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
     invalidMons = 0;
 
-    while (invalidMons != (1 << PARTY_SIZE) - 1) // All mons are invalid.
+    // Pass 1 (and optional Pass 2): prefer best typing; require SE move on pass 1.
+    while (invalidMons != (1 << PARTY_SIZE) - 1)
     {
-        bestDmg = TYPE_MUL_NO_EFFECT;
+        bestDmg = 255;           // start high so we choose the lowest multiplier
         bestMonId = PARTY_SIZE;
-        // Find the mon whose type is the most suitable offensively.
+
+        // Pick the mon whose typing takes the least damage from opponent.
         for (i = firstId; i < lastId; i++)
         {
             u16 species = GetMonData(&party[i], MON_DATA_SPECIES);
@@ -706,13 +700,11 @@ u8 GetMostSuitableMonToSwitchInto(void)
                 u8 type1 = gSpeciesInfo[species].types[0];
                 u8 type2 = gSpeciesInfo[species].types[1];
                 u8 typeDmg = TYPE_MUL_NORMAL;
+
                 ModulateByTypeEffectiveness(gBattleMons[opposingBattler].types[0], type1, type2, &typeDmg);
                 ModulateByTypeEffectiveness(gBattleMons[opposingBattler].types[1], type1, type2, &typeDmg);
 
-                /* Possible bug: this comparison gives the type that takes the most damage, when
-                a "good" AI would want to select the type that takes the least damage. Unknown if this
-                is a legitimate mistake or if it's an intentional, if weird, design choice */
-                if (bestDmg < typeDmg)
+                if (bestDmg > typeDmg)  // smaller multiplier = better typing
                 {
                     bestDmg = typeDmg;
                     bestMonId = i;
@@ -724,27 +716,37 @@ u8 GetMostSuitableMonToSwitchInto(void)
             }
         }
 
-        // Ok, we know the mon has the right typing but does it have at least one super effective move?
         if (bestMonId != PARTY_SIZE)
         {
+            // Does the chosen mon have any super-effective move?
             for (i = 0; i < MAX_MON_MOVES; i++)
             {
                 move = GetMonData(&party[bestMonId], MON_DATA_MOVE1 + i);
-                if (move != MOVE_NONE && TypeCalc(move, gActiveBattler, opposingBattler) & MOVE_RESULT_SUPER_EFFECTIVE)
+                if (move != MOVE_NONE && (TypeCalc(move, gActiveBattler, opposingBattler) & MOVE_RESULT_SUPER_EFFECTIVE))
                     break;
             }
 
-            if (i != MAX_MON_MOVES)
-                return bestMonId; // Has both the typing and at least one super effective move.
+            // Pass 1: require SE move. Pass 2 fallback: accept best typing if it's not bad.
+            if (i != MAX_MON_MOVES || (checkedAllMonForSEMoves && bestDmg <= TYPE_MUL_NOT_EFFECTIVE))
+                return bestMonId;
 
-            invalidMons |= gBitTable[bestMonId]; // Sorry buddy, we want something better.
+            // Otherwise, invalidate and try again.
+            invalidMons |= gBitTable[bestMonId];
+
+            // If everything got invalidated once, do a second pass that allows best typing without SE moves.
+            if (invalidMons == (1 << PARTY_SIZE) - 1 && !checkedAllMonForSEMoves)
+            {
+                invalidMons = 0;
+                checkedAllMonForSEMoves = TRUE;
+            }
         }
         else
         {
-            invalidMons = (1 << PARTY_SIZE) - 1; // No viable mon to switch.
+            invalidMons = (1 << PARTY_SIZE) - 1; // no viable mon by typing
         }
     }
 
+    // Final fallback: pick the mon with the strongest damaging move.
     gDynamicBasePower = 0;
     gBattleStruct->dynamicMoveType = 0;
     gBattleScripting.dmgMultiplier = 1;
@@ -753,20 +755,15 @@ u8 GetMostSuitableMonToSwitchInto(void)
     bestDmg = 0;
     bestMonId = PARTY_SIZE;
 
-    // If we couldn't find the best mon in terms of typing, find the one that deals most damage.
     for (i = firstId; i < lastId; i++)
     {
-        if ((u16)(GetMonData(&party[i], MON_DATA_SPECIES)) == SPECIES_NONE)
+        if ((u16)GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE)
             continue;
         if (GetMonData(&party[i], MON_DATA_HP) == 0)
             continue;
-        if (gBattlerPartyIndexes[battlerIn1] == i)
+        if (gBattlerPartyIndexes[battlerIn1] == i || gBattlerPartyIndexes[battlerIn2] == i)
             continue;
-        if (gBattlerPartyIndexes[battlerIn2] == i)
-            continue;
-        if (i == *(gBattleStruct->monToSwitchIntoId + battlerIn1))
-            continue;
-        if (i == *(gBattleStruct->monToSwitchIntoId + battlerIn2))
+        if (i == *(gBattleStruct->monToSwitchIntoId + battlerIn1) || i == *(gBattleStruct->monToSwitchIntoId + battlerIn2))
             continue;
 
         for (j = 0; j < MAX_MON_MOVES; j++)
@@ -788,6 +785,7 @@ u8 GetMostSuitableMonToSwitchInto(void)
 
     return bestMonId;
 }
+
 
 static u8 GetAI_ItemType(u8 itemId, const u8 *itemEffect) // NOTE: should take u16 as item Id argument
 {
