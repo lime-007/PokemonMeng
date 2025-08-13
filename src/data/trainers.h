@@ -25,7 +25,7 @@ const struct Trainer gTrainers[] = {
         .party = NO_ITEM_DEFAULT_MOVES(sParty_Sawyer1),
     },
 
-    [TRAINER_TEST_TRAINER] =
+    /**[TRAINER_TEST_TRAINER] =
     {
         .trainerClass = TRAINER_CLASS_PKMN_TRAINER_1, // Your unused class
         .encounterMusic_gender = TRAINER_ENCOUNTER_MUSIC_MALE,
@@ -35,7 +35,7 @@ const struct Trainer gTrainers[] = {
         .doubleBattle = FALSE,
         .aiFlags = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_UNSAFE,
         .party = NO_ITEM_DEFAULT_MOVES(sParty_DebugGuy),
-    },
+    },**/
 
     [TRAINER_GRUNT_AQUA_HIDEOUT_1] =
     {

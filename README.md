@@ -4,7 +4,7 @@ This is a decompilation of Pokémon Emerald. Using pret/pokeemerald(https://gith
 
 Credits for pret/pokeemerald - 
 
-Features:
+Bug Fixes:
 - Make space for EWRAM Data for Summary screen: Credits to ShinyDragonHunter
 - Not showing dex entries until getting the Pokedex: Credits to Jaizu
 - Surfing Dismount Ground Effects: Credits to ghoulslash
@@ -16,3 +16,7 @@ Features:
 - Optimization, Remove expensive and redundant 'BuildColorMaps()' function: Credits to Deokishisu
 - Don't reset pushable boulders when moving around the map: Credits to wiz1989
 - Fix Ai's Switch In Battle: Credits to devolov
+- Improved Partner Battle Code: Credits to Scyrous and Ketsuban
+- Improve the loading on battle terrain: Credits to Josh
+
+Featues:
